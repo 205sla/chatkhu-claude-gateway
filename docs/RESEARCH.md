@@ -1,6 +1,6 @@
 # ChatKHU와 Claude Code 연결 조사 기록
 
-확인일: 2026-10-08. 공개 공식 문서와 로컬 Claude Code의 도움말을 확인했다. ChatKHU 실계정 API는 호출하지 않았다.
+확인일: 2026-10-08. 초기 조사는 공개 공식 문서와 로컬 Claude Code 도움말만 대상으로 했으며, 이후 구현 세션에서 같은 날 실계정 검증까지 진행했다. 초기 조사와 후속 검증을 아래에 구분한다.
 
 ## 확인한 사실
 
@@ -38,10 +38,31 @@ ChatKHU의 인증 헤더 설명과 Claude Code의 설명에는 차이가 있다.
 - Node.js 22.17.0, npm 10.9.2, Claude Code 2.1.280 확인.
 - Claude Code 도움말에서 `--settings`, `--setting-sources`, `--model`, `--print` 지원 확인.
 - 이 PC의 npm 설치는 `.cmd`에서 패키지 내 native `claude.exe`를 실행한다. 다른 설치 방식과 운영체제도 고려해야 한다.
-- 기존 Kiro 게이트웨이 핸드북은 운영 흐름 참고용이다. 그 안의 Kiro 계정·세션·Desktop 설정을 이번 프로젝트에 적용하지 않는다.
+- 참고 프로젝트는 [Kiro Gateway — jwadow/kiro-gateway](https://github.com/jwadow/kiro-gateway)다. 초기 CLI 구현에서는 이 프로젝트를 사용하며 정리한 로컬 `kiro-claude-gateway-handbook`의 시작·상태 확인·종료·복구 흐름을 참고했다. Kiro 계정·세션 인증을 ChatKHU에 재사용하지 않는다. 이후 사용자 요청으로 진행한 Desktop 연결 변경은 아래에 구분한다.
+- 2026-10-08 원 저장소의 README와 [LICENSE](https://github.com/jwadow/kiro-gateway/blob/main/LICENSE)를 확인했다. 원 프로젝트는 jwadow와 기여자들의 작업이며 AGPL-3.0으로 공개되어 있다. README의 크레딧 절에 출처와 참고 범위를 명시했다.
 
 ## 실제 구현에서 확인할 항목
 
 계정에 표시되는 Base URL, 발급 키의 Gateway 사용 권한, 이용 가능한 Claude 모델 ID, 현재 CLI의 실제 요청, 스트리밍·도구 왕복, 토큰 계산, 크레딧 사용, 조직 필터의 영향은 실제 설정 후 확인해야 한다.
 
 공식 문서의 광범위한 지원 설명만으로 모든 Claude Code 기능의 동작을 보장할 수는 없다. 이 저장소의 프롬프트는 mock 검증과 실제 계정 검증을 분리하도록 요구한다.
+
+## 구현 단계 재확인 — 2026-10-08
+
+위 공식 링크를 다시 읽었다. 사용자 지정 챗봇 문서는 웹 텍스트 도구에서 오류가 나 브라우저로 직접 확인했다. API Gateway 화면의 계정별 Base URL, 챗봇 system 무시, 조직 필터와 별도 크레딧 필드는 여전히 구분되어 있다. 일반 Chat Completions의 system/developer, tools/tool_choice, SSE는 별도 변환 어댑터 설계에만 반영했다.
+
+개요는 모델 경로를 `/claude/v1/models/`, Messages 레퍼런스는 `/claude/v1/models`로 표시한다. 구현은 후자를 사용했고 이 계정에서 200을 확인했다. 메시지·토큰 계산은 문서의 끝 슬래시 경로로 직접 전송하며 3xx를 자동으로 따르지 않는다.
+
+현재 Claude 문서는 AUTH_TOKEN을 Bearer, API_KEY를 x-api-key로 설명한다. 설치된 CLI 2.1.280의 mock 및 실제 호출은 AUTH_TOKEN 사용 시 **Bearer**였다. ChatKHU 설명의 x-api-key 주장과 구분해 기록한다. 로컬 서버는 양쪽을 지원한다. [Claude 연결](https://code.claude.com/docs/en/llm-gateway-connect)
+
+모델 문서에 fable 별칭이 있어 기존 opus/sonnet/haiku와 함께 설정한다. 버전·성능·1m 용량을 만들어 넣지 않는다. 본문의 바이트 전달과 베타 헤더 보존 원칙을 유지한다. [모델 설정](https://code.claude.com/docs/en/model-config), [프로토콜](https://code.claude.com/docs/en/llm-gateway-protocol)
+
+계정 목록은 초기 11개, 최종 12개였고 Haiku 실제 텍스트/SSE/도구 왕복, 실제 CLI Read 왕복, 토큰 계산을 확인했다. 상세 명령·결과·미확인 범위는 [VALIDATION.md](VALIDATION.md)에 기록한다. 키·전체 대화·응답은 기록하지 않는다.
+
+## Desktop 후속 확인 — 2026-10-08
+
+Claude Desktop은 CLI의 환경·settings.json과 별도의 타사 추론 설정을 사용한다. 개발자 모드의 설정 화면과 Gateway 로그인, 정적 API 키 및 모델 조회 구성을 공식 문서에서 확인했다. 관리 설정이 적용된 화면은 읽기 전용이다. [Claude 연결 안내](https://code.claude.com/docs/en/llm-gateway-connect), [Desktop Gateway](https://claude.com/docs/third-party/claude-desktop/gateway), [MDM 설정](https://claude.com/docs/third-party/claude-desktop/mdm)
+
+이 PC의 MSIX 앱에는 일반 HKCU와 다른 기존 Gateway 주소가 보였다. MSIX의 앱별 가상 레지스트리와 패키지 컨텍스트 진단 방법을 Microsoft 문서로 확인했다. 사용자 승인 후 두 컨텍스트의 기존 연결 값을 각각 백업하고 주소·로컬 토큰만 바꿨다. HKLM·레지스트리 ACL은 변경하지 않았다. [MSIX 가상화](https://learn.microsoft.com/en-us/windows/msix/desktop/flexible-virtualization), [Invoke-CommandInDesktopPackage](https://learn.microsoft.com/en-us/powershell/module/appx/invoke-commandindesktoppackage?view=windowsserver2025-ps)
+
+실제 앱의 Electron 요청은 Origin 없이 `sec-fetch-site: none`을 보냈다. 기존 전체 fetch metadata 거절 규칙이 정상 로컬 인증도 403으로 막는 원인이었다. 이 값만 허용하고 나머지 Host·Origin·토큰 검사를 유지한 뒤 Desktop 2.26454.2.0에서 모델 목록·Messages·토큰 계산 200과 Haiku 4.5의 짧은 실제 응답을 확인했다. Desktop 도구 왕복까지 검증한 것은 아니다.

@@ -1,0 +1,20 @@
+{
+  "name": "chatkhu-claude-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "개인 ChatKHU 키로 실행하는 Claude Code용 로컬 Anthropic 게이트웨이",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "chatkhu": "bin/chatkhu.mjs" },
+  "scripts": {
+    "setup": "node bin/chatkhu.mjs setup",
+    "models": "node bin/chatkhu.mjs models",
+    "doctor": "node bin/chatkhu.mjs doctor",
+    "claude": "node bin/chatkhu.mjs claude",
+    "serve": "node bin/chatkhu.mjs serve",
+    "smoke": "node bin/chatkhu.mjs smoke",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "test:claude": "node scripts/verify-claude.mjs",
+    "test:install": "node scripts/verify-clean-install.mjs"
+  }
+}
