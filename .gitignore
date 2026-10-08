@@ -1,0 +1,28 @@
+# Credentials and machine-local settings
+.env
+.env.*
+!.env.example
+credentials*.json
+secrets/
+*.key
+*.pem
+.chatkhu/
+.claude/settings*.json
+
+# Runtime output and private request data
+.run/
+.runtime/
+logs/
+*.log
+*.jsonl
+captures/
+transcripts/
+
+# Common implementation/build artifacts
+node_modules/
+dist/
+coverage/
+.venv/
+__pycache__/
+.DS_Store
+Thumbs.db
