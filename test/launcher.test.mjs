@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, writeFile, mkdir, mkdtemp, readdir, rm, copyFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, mkdtemp, readdir, rm, copyFile, stat, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -71,7 +71,9 @@ test('real child process preserves cwd/argv, secrets stay out of argv/env, setti
   const code = await runClaude({ ...h.config, dir: join(f.dir, 'gateway-config') }, { cwd: f.cwd, args, env: f.env, binary, gatewayOptions: { adapter: h.adapter }, stdio: 'pipe', notify: () => {} });
   assert.equal(code, 7);
   const result = JSON.parse(await readFile(f.report, 'utf8'));
-  assert.equal(result.cwd, f.cwd); assert.deepEqual(result.args, args);
+  // macOS may expose tmpdir() via /var while the child's cwd resolves to /private/var.
+  assert.equal(await realpath(result.cwd), await realpath(f.cwd));
+  assert.deepEqual(result.args, args);
   assert.equal(result.status, 200); assert.equal(result.upstreamKeyInEnv, false); assert.equal(result.secretInArgv, false);
   assert.ok(result.providerDisabled && result.oauthCleared);
   assert.equal(result.aliases.OPUS, 'claude-test-a'); assert.equal(result.aliases.SONNET, 'claude-test-b');
